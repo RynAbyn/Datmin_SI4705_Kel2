@@ -80,4 +80,4 @@ with tab2:
     proba = model.predict_proba(input_scaled)[0][prediction]
 
     st.write(f"📊 Prediksi Risiko: **{'Bad' if prediction else 'Good'}**")
-    st.write(f"Probabilitas: `{proba:.2f}`")
+    st.write(f"Probabilitas: {proba:.2f}")
