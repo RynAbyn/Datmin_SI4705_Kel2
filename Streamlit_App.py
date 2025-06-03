@@ -2,10 +2,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 
+st.set_page_config(page_title="German Credit Risk Classifier", layout="centered")
 st.title("🎯 German Credit Risk Classifier")
 
 tab1, tab2 = st.tabs(["📚 Train Model", "🔍 Predict"])
@@ -17,6 +20,7 @@ with tab1:
     if uploaded_file:
         df = pd.read_csv(uploaded_file)
         df.columns = df.columns.str.strip()
+        df.drop(columns=["Unnamed: 0"], errors="ignore", inplace=True)  # Hapus kolom index jika ada
         df["Credit amount"] = pd.to_numeric(df["Credit amount"], errors='coerce')
 
         # Binary target
@@ -48,7 +52,7 @@ with tab1:
         st.write("Akurasi testing:", logreg.score(X_test, y_test))
 
 with tab2:
-    st.header("Predict")
+    st.header("🔍 Predict")
 
     try:
         with open("model_logreg.pkl", "rb") as f:
@@ -67,17 +71,56 @@ with tab2:
     housing = st.selectbox("Housing", ["own", "free", "rent"])
     housing_encoded = {"own": 2, "free": 0, "rent": 1}[housing]
 
-    input_data = pd.DataFrame([{
-        "Age": age,
-        "Job": job,
-        "Credit amount": credit_amount,
-        "Duration": duration,
-        "Housing": housing_encoded
-    }])
+    if st.button("Submit"):
+        input_data = pd.DataFrame([{
+            "Age": age,
+            "Job": job,
+            "Credit amount": credit_amount,
+            "Duration": duration,
+            "Housing": housing_encoded
+        }])
 
-    input_scaled = scaler.transform(input_data)
-    prediction = model.predict(input_scaled)[0]
-    proba = model.predict_proba(input_scaled)[0][prediction]
+        input_scaled = scaler.transform(input_data)
+        prediction = model.predict(input_scaled)[0]
+        proba = model.predict_proba(input_scaled)[0][prediction]
 
-    st.write(f"📊 Prediksi Risiko: **{'Bad' if prediction else 'Good'}**")
-    st.write(f"Probabilitas: {proba:.2f}")
+        st.markdown("---")
+        st.subheader("📊 Hasil Prediksi")
+        st.write(f"📌 Prediksi Risiko: **{'Bad' if prediction else 'Good'}**")
+        st.write(f"📈 Probabilitas: `{proba:.2f}`")
+
+        # Ringkasan Data
+        st.markdown("---")
+        st.subheader("🧾 Ringkasan Data Nasabah")
+        display_data = input_data.copy()
+        display_data["Housing"] = housing  # tampilkan nama housing asli
+        st.table(display_data)
+
+        # Visualisasi Bar Chart
+        st.subheader("📊 Visualisasi Data Input")
+
+        input_data_numeric = input_data.select_dtypes(include=np.number)
+        numeric_data = input_data_numeric.iloc[0]
+
+        fig, ax = plt.subplots(figsize=(8, 4))
+        bars = sns.barplot(x=numeric_data.index, y=numeric_data.values, palette="viridis", ax=ax)
+
+        for bar in bars.patches:
+            height = bar.get_height()
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                height + max(numeric_data.values) * 0.02,
+                f'{height:.0f}',
+                ha='center',
+                va='bottom',
+                fontsize=9,
+                color='black'
+            )
+
+        ax.set_title("Data Input Nasabah", fontsize=14, fontweight='bold')
+        ax.set_ylabel("Nilai")
+        ax.set_xlabel("Fitur")
+        plt.xticks(rotation=30)
+        ax.grid(axis='y', linestyle='--', alpha=0.6)
+
+        st.pyplot(fig)
