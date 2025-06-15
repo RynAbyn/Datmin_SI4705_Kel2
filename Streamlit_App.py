@@ -43,15 +43,11 @@ with tab1:
         split_ratio = st.selectbox("Pilih rasio test set", [0.3, 0.2, 0.35, 0.25])
         X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=split_ratio, random_state=42)
 
+    if st.button("Train Model"):
         logreg = LogisticRegression(max_iter=1000)
         logreg.fit(X_train, y_train)
 
-        with open("model_logreg.pkl", "wb") as f:
-            pickle.dump(logreg, f)
-        with open("scaler.pkl", "wb") as f:
-            pickle.dump(scaler, f)
-
-        st.success("✅ Model dan scaler berhasil disimpan.")
+        st.success("✅ Model berhasil dilatih.")
         st.write("Akurasi training:", logreg.score(X_train, y_train))
         st.write("Akurasi testing:", logreg.score(X_test, y_test))
 
